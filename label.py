@@ -79,13 +79,13 @@ class Label:
 
     def render(self):
         title = self.title_img()
-        title_x = 0
+        title_x = self.padding // 2
         title_h = title.height
 
         if self.subtitle:
             subtitle = self.subtitle_img()
             title_w = max(title.width, subtitle.width)
-            title_x = (title_w - title.width) // 2
+            title_x += (title_w - title.width) // 2
             subtitle_x = (title_w - subtitle.width) // 2
             title_h += subtitle.height + self.vspacing
         else:
