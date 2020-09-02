@@ -104,7 +104,7 @@ class PTD600:
 
             yield bytes(rasterline)
 
-    def print_img(self, img : Image):
+    def print_img(self, img : Image.Image):
         assert img.height == self.tape_px
         assert img.mode == "1"
 
