@@ -2,8 +2,8 @@
 import argparse
 
 import usb1
-from ptd600 import PTD600
-from label import Label
+from ptouch.ptd600 import PTD600
+from ptouch.label import Label
 
 
 parser = argparse.ArgumentParser()

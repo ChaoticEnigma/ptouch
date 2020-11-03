@@ -9,8 +9,8 @@ from PySide2.QtUiTools import QUiLoader
 from PIL import Image, ImageQt
 import usb1
 
-from label import Label
-from ptd600 import PTD600
+from ptouch.label import Label
+from ptouch.ptd600 import PTD600
 
 
 def get_children(widget):
