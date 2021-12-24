@@ -1,5 +1,7 @@
 
+import os
 import sys
+import logging
 
 from PySide2.QtCore import QObject, QThread, Signal, Slot
 from PySide2.QtGui import QPixmap
@@ -11,6 +13,8 @@ import usb1
 
 from ptouch.label import Label
 from ptouch.ptd600 import PTD600
+
+log = logging.getLogger(__name__)
 
 
 def get_children(widget):
@@ -46,7 +50,8 @@ class Worker(QObject):
             handle = context.openByVendorIDAndProductID(PTD600.VID, PTD600.PID)
             if handle is None:
                 # Device not present, or user is not allowed to access device.
-                self.gui_status.emit("Unable to open PTD600")
+                log.error("Failed to open PTD600")
+                self.gui_status.emit("Failed to open PTD600")
             else:
                 try:
                     handle.detachKernelDriver(PTD600.INTF)
@@ -54,15 +59,18 @@ class Worker(QObject):
                     pass
 
                 with handle.claimInterface(PTD600.INTF):
+                    log.info("Opened PTD600")
                     # Do stuff with endpoints on claimed interface.
                     ptouch = PTD600(handle)
-                    ptouch.info()
+                    ptouch.log_info()
 
                     if ptouch.tape_px != img.height:
                         self.gui_status.emit("Incorrect Tape Size")
                     else:
+                        log.info("Printing Label..")
                         self.gui_status.emit("Printing Label..")
                         ptouch.print_img(img)
+                        log.info("Done")
                         self.gui_status.emit("Done")
 
 
@@ -74,7 +82,7 @@ class App(QApplication):
 
         # Load UI
         loader = QUiLoader()
-        self.window = loader.load("label_wizard.ui")
+        self.window = loader.load(os.path.dirname(__file__) + "/label_wizard.ui")
 
         # Find widgets
         for w in get_children(self.window):
@@ -122,6 +130,8 @@ class App(QApplication):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)-8s - %(message)s", stream=sys.stdout)
+
     app = App(sys.argv)
     app.window.show()
     ret = app.exec_()

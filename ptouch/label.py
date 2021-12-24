@@ -1,12 +1,18 @@
 
+import os
 import math
+import logging
 
 import qrcode
 from PIL import Image, ImageFont, ImageDraw
 
+log = logging.getLogger(__name__)
+
 
 def rendertext(text, size, font="RobotoCondensed-Bold.ttf"):
-    font = ImageFont.truetype(font, size=size)
+    fpath = os.path.dirname(__file__) + "/../font/" + font
+    log.debug(f"Load font from {fpath}")
+    font = ImageFont.truetype(fpath, size=size)
     text_size = font.getsize(text)
     # print("Text dim: %d x %d" % text_size)
 

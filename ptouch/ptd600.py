@@ -1,11 +1,13 @@
 
 import time
 import struct
+import logging
 from typing import NamedTuple
 
 import usb1
 from PIL import Image
 
+log = logging.getLogger(__name__)
 
 tape_sizes = {
     6:  (32, 48+6),
@@ -75,13 +77,13 @@ class PTD600:
         self.status = ptouch_status(*struct.unpack("BBBBBBHHBBBBBBBBBBHBBBBI", buf))
         self.tape_px, self.tape_offset = tape_sizes[self.status.media_width]
 
-    def info(self):
-        print("Tape: %dmm, %dpx" % (self.status.media_width, self.tape_px))
+    def log_info(self):
+        log.info("Tape: %dmm, %dpx" % (self.status.media_width, self.tape_px))
         colors = {
             1: "White",
             8: "Black",
         }
-        print("Color: %d, %d" % (self.status.tape_color, self.status.text_color))
+        log.info("Color: %d, %d" % (self.status.tape_color, self.status.text_color))
 
     def make_rasterlines(self, img : Image):
         assert img.height == self.tape_px
@@ -149,6 +151,6 @@ if __name__ == "__main__":
                 print("Opened PTD600")
 
                 ptouch = PTD600(handle)
-                ptouch.info()
+                ptouch.log_info()
 
                 ptouch.print_img(pimg)

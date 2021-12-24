@@ -38,7 +38,7 @@ if args.print or args.no_print:
                 print("Opened PTD600")
 
                 ptouch = PTD600(handle)
-                ptouch.info()
+                ptouch.log_info()
                 if not args.no_print:
                     print("Printing Label..")
                     label = Label(args.title, args.subtitle, args.id, args.qr, height=ptouch.tape_px)
