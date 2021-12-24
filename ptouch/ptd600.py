@@ -63,8 +63,8 @@ class PTD600:
         self.init()
         self.getstatus()
 
-    @contextmanager
     @classmethod
+    @contextmanager
     def open(cls):
         with usb1.USBContext() as context:
             handle = context.openByVendorIDAndProductID(PTD600.VID, PTD600.PID)

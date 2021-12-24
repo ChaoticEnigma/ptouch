@@ -46,17 +46,23 @@ class Worker(QObject):
 
     @Slot(Image.Image)
     def print(self, img):
-        with PTD600.open() as ptouch:
-            ptouch.log_info()
+        try:
+            log.info("Open PTouch...")
+            with PTD600.open() as ptouch:
+                ptouch.log_info()
 
-            if ptouch.tape_px != img.height:
-                self.gui_status.emit("Incorrect Tape Size")
-            else:
+                if ptouch.tape_px != img.height:
+                    raise Exception("Incorrect Tape Size")
+
                 log.info("Printing Label..")
                 self.gui_status.emit("Printing Label..")
                 ptouch.print_img(img)
                 log.info("Done")
                 self.gui_status.emit("Done")
+
+        except Exception as e:
+            log.exception("Error")
+            self.gui_status.emit(str(e))
 
 
 class App(QApplication):
