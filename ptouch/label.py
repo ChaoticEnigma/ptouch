@@ -124,7 +124,7 @@ class Label:
                 id_x += self.vspacing
             id_w = id.width
 
-        total_w = id_x + id_w + (self.padding * 2)
+        total_w = id_x + id_w + self.padding
 
         img = Image.new("1", (total_w, self.height), "white")
         img.paste(title, (title_x, (self.height - title_h) // 2))
