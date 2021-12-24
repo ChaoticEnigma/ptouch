@@ -3,6 +3,7 @@ import time
 import struct
 import logging
 from typing import NamedTuple
+from contextlib import contextmanager
 
 import usb1
 from PIL import Image
@@ -61,6 +62,23 @@ class PTD600:
 
         self.init()
         self.getstatus()
+
+    @contextmanager
+    @classmethod
+    def open(cls):
+        with usb1.USBContext() as context:
+            handle = context.openByVendorIDAndProductID(PTD600.VID, PTD600.PID)
+            if handle is None:
+                # Device not present, or user is not allowed to access device.
+                raise Exception("Failed to open PTD600")
+
+            try:
+                handle.detachKernelDriver(PTD600.INTF)
+            except:
+                pass
+
+            with handle.claimInterface(PTD600.INTF):
+                yield PTD600(handle)
 
     def init(self):
         cmd = b'\x1b\x40' # 1B 40 = ESC @ = INIT

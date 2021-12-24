@@ -46,32 +46,17 @@ class Worker(QObject):
 
     @Slot(Image.Image)
     def print(self, img):
-        with usb1.USBContext() as context:
-            handle = context.openByVendorIDAndProductID(PTD600.VID, PTD600.PID)
-            if handle is None:
-                # Device not present, or user is not allowed to access device.
-                log.error("Failed to open PTD600")
-                self.gui_status.emit("Failed to open PTD600")
+        with PTD600.open() as ptouch:
+            ptouch.log_info()
+
+            if ptouch.tape_px != img.height:
+                self.gui_status.emit("Incorrect Tape Size")
             else:
-                try:
-                    handle.detachKernelDriver(PTD600.INTF)
-                except:
-                    pass
-
-                with handle.claimInterface(PTD600.INTF):
-                    log.info("Opened PTD600")
-                    # Do stuff with endpoints on claimed interface.
-                    ptouch = PTD600(handle)
-                    ptouch.log_info()
-
-                    if ptouch.tape_px != img.height:
-                        self.gui_status.emit("Incorrect Tape Size")
-                    else:
-                        log.info("Printing Label..")
-                        self.gui_status.emit("Printing Label..")
-                        ptouch.print_img(img)
-                        log.info("Done")
-                        self.gui_status.emit("Done")
+                log.info("Printing Label..")
+                self.gui_status.emit("Printing Label..")
+                ptouch.print_img(img)
+                log.info("Done")
+                self.gui_status.emit("Done")
 
 
 class App(QApplication):
