@@ -43,24 +43,32 @@ def rendertext(text, size, font="RobotoCondensed-Bold.ttf"):
 
 
 class Label:
-    def __init__(self, title : str, subtitle : str, id : str, qrdata : str, height=128):
+    def __init__(self, title : str, subtitle : str, id : str, qrdata : str, height : int = 128, subtitle_ratio : float = 1):
         self.title = title
         self.subtitle = subtitle
+        self.total_font_size = 120
+        self.subtitle_ratio = subtitle_ratio
         self.id = id
         self.qrdata = qrdata
         self.height = height
         self.hspacing = 20
         self.vspacing = 10
-        self.padding = 20
+        self.padding = 10
+        self.max_height = 128
 
     def title_img(self):
-        return rendertext(self.title, math.floor(80 * (self.height / 128)), "RobotoCondensed-Bold.ttf")
+        font_size = min(80, (self.total_font_size / 2) + ((1 - self.subtitle_ratio) * self.total_font_size / 2))
+        return rendertext(self.title, math.floor(font_size * (self.height / self.max_height)), "RobotoCondensed-Bold.ttf")
 
     def subtitle_img(self):
-        return rendertext(self.subtitle, math.floor(36 * (self.height / 128)), "RobotoCondensed-Regular.ttf")
+        font_size = (self.total_font_size / 2) * self.subtitle_ratio
+        if font_size >= 50:
+            return rendertext(self.subtitle, math.floor(font_size * (self.height / self.max_height)), "RobotoCondensed-Bold.ttf")
+        else:
+            return rendertext(self.subtitle, math.floor(font_size * (self.height / self.max_height)), "RobotoCondensed-Regular.ttf")
 
     def id_img(self):
-        img = rendertext(self.id, math.floor(24 * (self.height / 128)), "Roboto-Regular.ttf")
+        img = rendertext(self.id, math.floor(24 * (self.height / self.max_height)), "Roboto-Regular.ttf")
         rot = img.transpose(Image.ROTATE_90)
         return rot
 
@@ -75,7 +83,6 @@ class Label:
         qr.make(fit=True)
 
         img = qr.make_image()
-        assert self.height <= self.height
 
         # scale QR to fit label height
         scale = self.height // img.size[1]
@@ -85,19 +92,20 @@ class Label:
 
     def render(self):
         title = self.title_img()
-        title_x = self.padding // 2
+        title_x = self.padding
+        subtitle_x = self.padding
         title_h = title.height
 
         if self.subtitle:
             subtitle = self.subtitle_img()
             title_w = max(title.width, subtitle.width)
-            title_x += (title_w - title.width) // 2
-            subtitle_x = (title_w - subtitle.width) // 2
+            title_x += (title_w // 2) - (title.width // 2)
+            subtitle_x += (title_w // 2) - (subtitle.width // 2)
             title_h += subtitle.height + self.vspacing
         else:
             title_w = title.width
 
-        qr_x = title_x + title_w
+        qr_x = title_w + self.padding
         qr_w = 0
 
         if self.qrdata:
@@ -116,7 +124,7 @@ class Label:
                 id_x += self.vspacing
             id_w = id.width
 
-        total_w = id_x + id_w + self.padding
+        total_w = id_x + id_w + (self.padding * 2)
 
         img = Image.new("1", (total_w, self.height), "white")
         img.paste(title, (title_x, (self.height - title_h) // 2))

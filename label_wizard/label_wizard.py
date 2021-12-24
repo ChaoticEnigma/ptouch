@@ -87,23 +87,31 @@ class App(QApplication):
         self.update()
 
         self.titleEdit.textChanged.connect(self.update)
+        self.title2Edit.textChanged.connect(self.update)
         self.subtitleEdit.textChanged.connect(self.update)
         self.idEdit.textChanged.connect(self.update)
         self.qrEdit.textChanged.connect(self.update)
         self.tape24mm.toggled.connect(self.update)
+        self.radioButton.toggled.connect(self.update)
+        self.radioButton_2.toggled.connect(self.update)
 
         self.printButton.pressed.connect(self.print)
         self.worker_print.connect(self.worker.print)
 
     def render(self):
         title = self.titleEdit.text()
-        subtitle = self.subtitleEdit.text()
+        if self.subtitleEdit.isEnabled():
+            subtitle = self.subtitleEdit.text()
+            ratio = 0.5
+        else:
+            subtitle = self.title2Edit.text()
+            ratio = 1
         id = self.idEdit.text()
         qr = self.qrEdit.text()
         size = self.tape24mm.isChecked()
         height = (128 if size else 76)
 
-        label = Label(title, subtitle, id, qr, height=height)
+        label = Label(title, subtitle, id, qr, height=height, subtitle_ratio=ratio)
         return label.render()
 
     def update(self):
