@@ -43,11 +43,14 @@ def rendertext(text, size, font="RobotoCondensed-Bold.ttf"):
 
 
 class Label:
-    def __init__(self, title : str, subtitle : str, id : str, qrdata : str, height : int = 128, subtitle_ratio : float = 1):
+    def __init__(self, title : str, subtitle : str, id : str, qrdata : str, height : int = 128, title_ratio : float = 0.7):
         self.title = title
         self.subtitle = subtitle
-        self.total_font_size = 120
-        self.subtitle_ratio = subtitle_ratio
+        self.max_title_size = 120
+        if self.subtitle:
+            self.title_ratio = title_ratio
+        else:
+            self.title_ratio = 1
         self.id = id
         self.qrdata = qrdata
         self.height = height
@@ -57,11 +60,11 @@ class Label:
         self.max_height = 128
 
     def title_img(self):
-        font_size = min(80, (self.total_font_size / 2) + ((1 - self.subtitle_ratio) * self.total_font_size / 2))
+        font_size = self.max_title_size * self.title_ratio
         return rendertext(self.title, math.floor(font_size * (self.height / self.max_height)), "RobotoCondensed-Bold.ttf")
 
     def subtitle_img(self):
-        font_size = (self.total_font_size / 2) * self.subtitle_ratio
+        font_size = self.max_title_size * (1 - self.title_ratio)
         if font_size >= 50:
             return rendertext(self.subtitle, math.floor(font_size * (self.height / self.max_height)), "RobotoCondensed-Bold.ttf")
         else:

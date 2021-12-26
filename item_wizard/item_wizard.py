@@ -2,10 +2,11 @@
 import os
 import sys
 import logging
+import csv
 
 from PySide2.QtCore import QObject, QThread, Signal, Slot
 from PySide2.QtGui import QPixmap
-from PySide2.QtWidgets import QApplication, QLineEdit, QPushButton, QStatusBar, QLabel, QRadioButton
+from PySide2.QtWidgets import QApplication, QLineEdit, QPushButton, QStatusBar, QLabel, QRadioButton, QComboBox
 from PySide2.QtUiTools import QUiLoader
 
 from PIL import Image, ImageQt
@@ -72,16 +73,39 @@ class App(QApplication):
 
         # Load UI
         loader = QUiLoader()
-        self.window = loader.load(os.path.dirname(__file__) + "/label_wizard.ui")
+        self.window = loader.load(os.path.dirname(__file__) + "/item_wizard.ui")
 
         # Find widgets
         for w in get_children(self.window):
             setattr(self, w[1], self.window.findChild(w[0], w[1]))
 
-        self.thread = QThread()
-        self.worker = Worker(self)
-        self.worker.moveToThread(self.thread)
-        self.thread.start()
+        # self.thread = QThread()
+        # self.worker = Worker(self)
+        # self.worker.moveToThread(self.thread)
+        # self.thread.start()
+
+        self.data = {}
+
+        try:
+            with open("items.csv", "r", newline="") as f:
+                csvreader = csv.reader(f)
+                for line in csvreader:
+                    id, title, subtitle = line
+                    id = int(id)
+                    self.data[id] = (title, subtitle)
+        except:
+            pass
+
+        if len(self.data):
+            self.next_id = max(self.data.keys()) + 1
+        else:
+            self.next_id = 1
+        self.idEdit.setText(f"{self.next_id:05d}")
+
+        self.comboBox.addItem("New...", None)
+        for id, (title, subtitle) in self.data.items():
+            print(f"{id} - {title} - {subtitle}")
+            self.comboBox.addItem(f"{id:05d}: {title}", id)
 
         self.update()
 
@@ -94,10 +118,22 @@ class App(QApplication):
         self.radioButton.toggled.connect(self.update)
         self.radioButton_2.toggled.connect(self.update)
 
+        self.comboBox.activated.connect(self.select)
         self.printButton.pressed.connect(self.print)
-        self.worker_print.connect(self.worker.print)
+        # self.worker_print.connect(self.worker.print)
 
-    def render(self):
+    @Slot(int)
+    def select(self, index):
+        id = self.comboBox.itemData(index)
+        if id is not None:
+            title, subtitle = self.data[id]
+            self.titleEdit.setText(title)
+            self.title2Edit.setText(subtitle)
+            self.subtitleEdit.setText(subtitle)
+            self.idEdit.setText(f"{id:05d}")
+            self.qrEdit.setText(f"https://znnxs.com/item/{id:05d}")
+
+    def params(self):
         title = self.titleEdit.text()
         if self.subtitleEdit.isEnabled():
             subtitle = self.subtitleEdit.text()
@@ -107,20 +143,57 @@ class App(QApplication):
             ratio = 0.5
         id = self.idEdit.text()
         qr = self.qrEdit.text()
+
+        return title, subtitle, id, qr, ratio
+
+    def save(self):
+        title, subtitle, id, qr, ratio = self.params()
+        id = int(id)
+        self.data[id] = (title, subtitle)
+        with open("items.csv", "a", newline="") as f:
+            csvwriter = csv.writer(f)
+            csvwriter.writerow([ id, title, subtitle ])
+        self.comboBox.addItem(f"{id:05d}: {title}", id)
+        self.next_id = id + 1
+        self.idEdit.setText(f"{self.next_id:05d}")
+
+    def render(self):
+        title, subtitle, id, qr, ratio = self.params()
         size = self.tape24mm.isChecked()
         height = (128 if size else 76)
 
         label = Label(title, subtitle, id, qr, height=height, title_ratio=ratio)
         return label.render()
 
+    @Slot()
     def update(self):
         img = self.render()
         qimg = ImageQt.ImageQt(img)
         self.imageLabel.setPixmap(QPixmap.fromImage(qimg))
 
+    @Slot()
     def print(self):
         img = self.render()
-        self.worker_print.emit(img)
+        self.save()
+        # self.worker_print.emit(img)
+
+        try:
+            log.info("Open PTouch...")
+            with PTD600.open() as ptouch:
+                ptouch.log_info()
+
+                if ptouch.tape_px != img.height:
+                    raise Exception("Incorrect Tape Size")
+
+                log.info("Printing Label..")
+                self.status("Printing Label..")
+                ptouch.print_img(img)
+                log.info("Done")
+                self.status("Done")
+
+        except Exception as e:
+            log.exception("Error")
+            self.status(str(e))
 
     @Slot(str)
     def status(self, text):
